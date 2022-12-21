@@ -1,3 +1,17 @@
+---
+linkTitle: Creating and using App Sets
+title: Creating and using App Sets
+description: Learn how to create and use App Sets to use with GitOps.
+weight: 50
+menu:
+  main:
+    identifier: advanced-gitops-apps-app-sets
+    parent: advanced-gitops-apps
+last_review_date: 2022-12-20
+owner:
+  - https://github.com/orgs/giantswarm/teams/team-honeybadger
+---
+
 # Creating and using App Sets
 
 - [Limitations](#limitations)

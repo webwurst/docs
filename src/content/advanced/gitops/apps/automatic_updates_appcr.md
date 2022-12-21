@@ -1,3 +1,17 @@
+---
+linkTitle: Enable automatic updates in Apps
+title: Enable automatic updates in Apps
+description: Learn how to enable automatic updates in Apps deployed using GitOps.
+weight: 50
+menu:
+  main:
+    identifier: advanced-gitops-apps-automatic-update
+    parent: advanced-gitops-apps
+last_review_date: 2022-12-20
+owner:
+  - https://github.com/orgs/giantswarm/teams/team-honeybadger
+---
+
 # Enable automatic updates of an existing App
 
 - [Enable automatic updates of an existing App](#enable-automatic-updates-of-an-existing-app)

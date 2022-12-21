@@ -1,3 +1,16 @@
+---
+linkTitle: Add a new App to a Workload cluster
+title: Add a new App to a Workload cluster
+description: Learn how to deploy applications into Workload clusters using GitOps.
+weight: 50
+menu:
+  main:
+    identifier: advanced-gitops-apps-add-app-cr
+    parent: advanced-gitops-apps
+last_review_date: 2022-12-20
+owner:
+  - https://github.com/orgs/giantswarm/teams/team-honeybadger
+---
 # Add a new App to a Workload Cluster
 
 - [Examples](#examples)
