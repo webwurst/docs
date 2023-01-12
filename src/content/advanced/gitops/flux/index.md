@@ -1,6 +1,6 @@
 ---
-linkTitle: Managing workload clusters with GitOps
-title: Managing workload clusters with GitOps
+linkTitle: What is FluxCD
+title: What is FluxCD
 description: An explanation of the GitOps principles and a guide to managing Giant Swarm platform resources with FluxCD.
 weight: 20
 menu:
