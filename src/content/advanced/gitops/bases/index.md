@@ -21,8 +21,6 @@ is an App with Cluster instance definition, second one is an App with all the de
 needs in order to run correctly. As such, creating a CAPx cluster means that you need to deliver two correctly
 configured App CRs to the Management Cluster.
 
-You can follow the instructions below to store CAPx cluster templates in the  repository. The instructions respect the
-[repository structure](./repo_structure.md).
 
 Adding definitions can be done on two levels: shared cluster template and version specific template, see
 [create shared template base](#create-shared-template-base-optional)
