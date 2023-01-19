@@ -11,7 +11,7 @@ user_questions:
   - How can I create an base template for workload clusters in GitOps?
 owner:
   - https://github.com/orgs/giantswarm/teams/team-honeybadger
-last_review_date: 2022-12-20
+last_review_date: 2023-01-20
 ---
 
 # Add a CAPx (CAPI) Workload Cluster template (cluster App based)
@@ -21,16 +21,13 @@ is an App with Cluster instance definition, second one is an App with all the de
 needs in order to run correctly. As such, creating a CAPx cluster means that you need to deliver two correctly
 configured App CRs to the Management Cluster.
 
-
 Adding definitions can be done on two levels: shared cluster template and version specific template, see
-[create shared template base](#create-shared-template-base-optional)
+[create shared template base](#create-shared-template-base)
 and [create versioned base](#create-versioned-base-optional).
 
-If all you want is to create a new CAPx cluster using an existing definition,
-go to the [creating cluster instance with CAPx](./add_wc_instance.md).
 
 **IMPORTANT**, CAPx configuration utilizes the
-[App Platform Configuration Levels](/getting-started//app-configuration/#levels),
+[App Platform Configuration Levels](/getting-started/app-catalog/app-configuration/#levels),
 in the following manner:
 
 - cluster templates provide default configuration via App' `config` field,
@@ -38,9 +35,7 @@ in the following manner:
 
 See more about this approach [here](https://github.com/giantswarm/rfc/tree/main/merging-configmaps-gitops).
 
-## Example
 
-An example of a WC cluster template created using the CAPx/CAPI is available in [bases/clusters/capo](/bases/clusters/capo/).
 
 ## Export environment variables
 
@@ -59,20 +54,9 @@ In order to avoid code duplication, it is advised to utilize the
 [bases and overlays](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/#bases-and-overlays)
 of Kustomize in order to configure the cluster.
 
-This repository comes with some built in bases you can choose from, go to the [bases](/bases/clusters)
-directory and search for some that meet your needs, then export their paths with:
+## Create shared cluster template base {#create-shared-template-base}
 
-```sh
-export CLUSTER_PATH=CLUSTER_BASE_PATH
-```
-
-If the desired base is not there, you can add it. Reference the next sections to get a general idea of how to do it.
-
-## Create shared cluster template base (optional)
-
-*Note: if a template base for your provider is already here, you most probably want to skip this part.*
-
-**IMPORTANT:** shared cluster template base cannot serve as a standalone base for cluster creation, it is there only to abstract
+**IMPORTANT:** shared cluster template base should not serve as a standalone base for cluster creation, it is there only to abstract
 App CRs that are common to all clusters versions, and to provide basic configuration for default apps App.
 It is then used as a base to other bases, which provide an overlay with a specific configuration. This is to avoid
 code duplication across bases.
@@ -81,112 +65,15 @@ code duplication across bases.
 steps needed to move forward. Hence, instructions here will not always be precise in telling you what to change,
 as this can strongly depend on resources involved, how much of them you would like to include into a base, etc.
 
-1. Export provider's and CAPx names you are about to create, for example `capo` and `openstack`:
+We provide a command to create bases for CAPI clusters in an easy way. A base can be created by running:
 
-    ```sh
-    export CAPX=capo
-    export PROVIDER=openstack
-    ```
+```sh
+kubectl gs gitops add base --provider capa
+```
 
-1. Create a directory structure:
+The current possible values for the providers can be checked in the [command reference](/use-the-api/kubectl-gs/gitops/add-base)
 
-    ```sh
-    mkdir -p bases/clusters/${CAPX}/template
-    ```
-
-1. Create cluster App CR template:
-
-    ```sh
-    cat <<EOF > bases/clusters/${CAPX}/template/cluster.yaml
-    apiVersion: application.giantswarm.io/v1alpha1
-    kind: App
-    metadata:
-      name: \${cluster_name}
-      namespace: org-\${organization}
-    spec:
-      catalog: giantswarm
-      kubeConfig:
-        inCluster: true
-      name: cluster-${PROVIDER}
-      namespace: org-\${organization}
-      version: \${cluster_release}
-    EOF
-    ```
-
-1. Create a default apps App CR template, note the version of the App is set to `0.1.0` by default
-   (check with the provider team which version of default apps should you use for your provider):
-
-    ```sh
-    cat <<EOF > bases/clusters/${CAPX}/template/default_apps.yaml
-    apiVersion: application.giantswarm.io/v1alpha1
-    kind: App
-    metadata:
-      name: \${cluster_name}-default-apps
-      namespace: org-\${organization}
-    spec:
-      catalog: giantswarm
-      extraConfig
-        - kind: configMap
-          name: \${cluster_name}-default-apps-config
-          namespace: org-\${organization}
-          priority: 1
-      kubeConfig:
-        inCluster: true
-      name: default-apps-${PROVIDER}
-      namespace: org-\${organization}
-      version: \${default_apps_release:=0.1.0}
-    EOF
-    ```
-
-1. Create default Apps config, note we do not yet put values in a ConfigMap to have YAML syntax highlighting:
-
-    ```sh
-    cat <<EOF > bases/clusters/${CAPX}/template/default_apps_config.yaml
-    clusterName: \${cluster_name}
-    organization: \${organization}
-    EOF
-    ```
-
-1. Create the template's `kustomization.yaml`, note usage of
-[ConfigMap Generator](https://github.com/kubernetes-sigs/kustomize/blob/master/examples/configGeneration.md)
-for turning config from the previous step into a ConfigMap and placing it under the
-[values](https://docs.giantswarm.io/app-platform/app-configuration/#values-format) key:
-
-    ```sh
-    cat <<EOF > bases/clusters/${CAPX}/template/kustomization.yaml
-    apiVersion: kustomize.config.k8s.io/v1beta1
-    configMapGenerator:
-      - files:
-        - values=default_apps_config.yaml
-        name:  \${cluster_name}-default-apps-config
-        namespace: org-\${organization}
-    generatorOptions:
-      disableNameSuffixHash: true
-    kind: Kustomization
-    resources:
-      - cluster.yaml
-      - default_apps.yaml
-    EOF
-    ```
-
-1. Create the `readme.md` listing variables supported and expected values:
-
-    ```sh
-    cat <<EOF > readme.md
-    # Input Variables
-
-    Expected variables are in the table below.
-
-    | Variable | Expected Value |
-    | :--: | :--: |
-    | \`cluster_name\` | Unique name of the Workload Cluster, MUST comply with the [Kubernetes Names](https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names) |
-    | \`organization\` | Organization name, the \`org-\` prefix MUST not be part of it and MUST comply with the [Kubernetes Names](https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names) |
-    | \`cluster_release\` | Cluster App version, reference the [Cluster Openstack](https://github.com/giantswarm/cluster-openstack/releases) for more insight on releases |
-    | \`default_apps_release\` | Defaults Apps App version, reference the [Default Apps for Openstack](https://github.com/giantswarm/default-apps-openstack/releases) for more insight on releases |
-    EOF
-    ```
-
-## Create versioned base (optional)
+## Create versioned base (optional) {#create-versioned-base-optional}
 
 **IMPORTANT**, versioned cluster template bases use a shared cluster template base and overlay it with a preferably
 generic configuration for a given cluster version. Versioning comes from the fact that `values.yaml` schema may change
@@ -194,7 +81,7 @@ over multiple releases,
 and although minor differences can be handled on the `userConfig` level, it is advised for the bases to follow major
 `values.yaml` schema versions to avoid confusion.
 
-There is an example for CAPO [v0.6.0](/bases/clusters/capo/>=v0.6.0) as major changes were introduced
+In the `gitops-template` repository there is an example for CAPO [v0.6.0](https://github.com/giantswarm/gitops-template/tree/main/bases/clusters/capo/>=v0.6.0) as major changes were introduced
 to the `values.yaml` in the [cluster-openstack v0.6.0 release](https://github.com/giantswarm/cluster-openstack/releases/tag/v0.6.0).
 
 **IMPORTANT**, despite the below instructions referencing `kubectl-gs` for templating configuration, `kubectl-gs`
@@ -217,7 +104,7 @@ it is advised to check what is generated against the version-specific `values.ya
     mkdir -p bases/nodepools/${CAPX}/${VERSION}
     ```
 
-1. Use the [kubectl gs template cluster](https://docs.giantswarm.io/ui-api/kubectl-gs/template-cluster/) to template
+1. Use the [kubectl gs template cluster](use-the-api/kubectl-gs/template-cluster/) to template
 cluster resources, see example for the `openstack` provider below. Use arbitrary values for the mandatory fields, we
 will configure them later in our process:
 
@@ -332,6 +219,3 @@ pools, etc.:
     export CLUSTER_PATH=bases/clusters/${CAPX}/${VERSION}
     ```
 
-## Recommended next steps
-
-- [Managing Apps installed in clusters with GitOps](./apps/README.md)
